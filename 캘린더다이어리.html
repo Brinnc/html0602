@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캘린더다이어리</title>
+    <style>
+        #wrapper {
+            width: 700px;
+            height: 700px;
+            background: lightslategray;
+            margin: auto;
+        }
+
+        #header {
+            width: 100%;
+            height: 50px;
+            background: midnightblue;
+            text-align: center;
+            color: aliceblue;
+        }
+
+        #title {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        #header button {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+            border: 2px solid lightgray;
+            border-radius: 15px;
+        }
+
+        #day_title {
+            width: 100%;
+            height: 50px;
+            background: lavenderblush;
+            position: relative;
+            text-align: center;
+        }
+
+        #day_title div {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #content {
+            width: 100%;
+            height: 600px;
+            background: aliceblue;
+            position: relative;
+        }
+    </style>
+    <script src="./Box.js"></script>
+    <script src="./DayBox.js"></script>
+    <script src="./DateBox.js"></script>
+    <script>
+        let title; //달력제목 영역
+        let day_title; //요일 영역
+        let content; //날짜 영역
+
+        let dayArray = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+        let nowDate; //현재 날짜 정보, 날짜 정보를 전역변수로 공유해 이전과 다음 버튼에 의해 조작해 과거와 미래를 출력함
+
+        let boxArray = []; //날짜를 담을 2차원 배열 6층
+
+        //1)
+        function createDayBox() {
+            for (let i = 0; i < dayArray.length; i++) {
+                //container, width, height, x, y, text, line, bg
+                new DayBox(day_title, 100, 50, i * 100, 0, dayArray[i], "lightgray", "lightskyblue");
+
+            }
+        }
+
+        //2)
+        function createDateBox() {
+            let count = 0; //박스의 순번
+
+            for (let a = 0; a < 6; a++) { //층
+
+                let arr = new Array(7); //빈 배열 생성
+                for (let i = 0; i < dayArray.length; i++) { //호
+                    //count++;
+                    let dateBox = new DateBox(content, 100, 100, i * 100, a * 100, "", "lightgray", "mintcream");
+                    arr[i] = dateBox; //위 1차원 배열에 담기
+
+                    //클릭
+                    dateBox.div.addEventListener("mousedown", function () {
+                        alert("저는" + this.innerText + "일임");
+                    });
+                }
+                //2차원 배열에 arr을 담기
+                boxArray.push(arr);
+            }
+
+        }
+
+        //3)
+        //달력의 제목 출력
+        function setTitle() {
+            //현재 날짜 정보 가져오기
+            //nowDate = new Date();
+            let year = nowDate.getFullYear();
+            let month = nowDate.getMonth();
+            title.innerText = year + "년 " + (month + 1) + "월";
+        }
+
+        //4)
+        //현재 공유되고 있는 전역변수인 nowDate에 월 정보를 +1씩 증가시키고 setTitle 호출
+        function next() {
+            let month = nowDate.getMonth();
+            nowDate.setMonth(month + 1);
+            nowDate.setDate(1);
+            setTitle();
+            printDateNum();
+        }
+        //현재 공유되고 있는 전역변수인 nowDate에 월 정보를 -1씩 감소시키고 setTitle 호출
+        function prev() {
+            nowDate.setMonth(nowDate.getMonth() - 1);
+            nowDate.setDate(1);
+            setTitle();
+            printDateNum();
+        }
+
+        //6)
+        function getLastDateOfMonth() {
+            let d = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1);
+            d.setDate(0); //0일로 조작
+            return d.getDate();
+        }
+
+        //5)
+        //날짜 출력: 이미 생성되어진 div 42개 위에 현재 날짜 객체인 nowDate를 통해
+        //1) 무슨 요일부터 1일이 시작되는지?
+        //2) 몇일까지 있는지? 마지막 날짜가 몇일인지?
+        function printDateNum() { //월은 출력할 때(즉, 유저가 볼때) +1 
+            console.log("오늘은", nowDate.getMonth() + 1, "월", nowDate.getDate(), "일", dayArray[nowDate.getDay()]);
+
+            let startDay = nowDate.getDay(); //해당 월의 시작요일
+            let lastDate = getLastDateOfMonth(); //
+
+            console.log(startDay, lastDate);
+
+            let count = 0;
+            let n = 0;
+            //42개의 셀이 이차원 배열에 들어있기 때문에 
+            //아래의 이중포문을 이용하여 각 셀의 div에 
+            //날짜를 대입하자
+            for (let a = 0; a < boxArray.length; a++) {
+                for (let i = 0; i < boxArray[a].length; i++) {
+                    if (count >= startDay && n < lastDate) { //
+                        n++;
+                        boxArray[a][i].setText(n);
+
+                    } else {
+                        boxArray[a][i].setText("");
+                    }
+                    count++;
+                }
+            }
+        }
+
+        //0)
+        function init() {
+            title = document.getElementById("title");
+            day_title = document.getElementById("day_title");
+            content = document.getElementById("content");
+
+            createDayBox();
+            createDateBox();
+
+            //현재 날짜 정보 가져오기
+            nowDate = new Date();
+            nowDate.setDate(1);
+            setTitle();
+            printDateNum();
+        }
+
+        //0)
+        addEventListener("load", function () {
+            init();
+        });
+
+    </script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="header">
+            <button onClick="prev()">◀</button>
+            <span id="title">2023년 00월</span>
+            <button onClick="next()">▶</button>
+        </div>
+        <div id="day_title"></div>
+        <div id="content"></div>
+    </div>
+</body>
+
+</html>

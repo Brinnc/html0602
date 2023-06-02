@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내껨</title>
+    <style>
+        body {
+            margin: 0%;
+        }
+
+        #wrapper {
+            width: 900px;
+            height: 600px;
+            background: black;
+            margin: auto;
+        }
+
+        #header {
+            width: 100%;
+            height: 30px;
+            background: lightgray;
+            text-align: right;
+            font-weight: bold;
+            font-size: 20px;
+            box-sizing: border-box;
+            padding-right: 20px;
+        }
+
+        #content {
+            width: 100%;
+            height: 570px;
+            background: lightskyblue;
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../js/lib.js"></script>
+    <script src="./GameObject.js"></script>
+    <script src="./Plane.js"></script>
+    <script src="./Bullet.js"></script>
+    <script src="./Enemy.js"></script>
+    <script>
+        let header;
+        let content;
+        let bgX = 0; //배경의 x축의 위치값
+        let score = 0; //점수
+        let plane;
+        let bullet;
+
+        //다수의 총알 인스턴스를 보관할 배열
+        let bulletArray=[];
+
+        //다수의 적군 인스턴스를 보관할 배열
+        let enemyArray=[];
+        //적군 이미지 등 게임에 사용되는 이미지는 규칙이 없다는 전제하에 개발해야 하므로, 
+        //규칙없는 이미지는 규칙이 생기도록 배열에 보관해놓자
+        let enemyImg=["e1.png", "e2.png", "e3.png", "e4.png", "e5.png"];
+
+        let flag=true; //게임 루프를 제어하는 논리값
+
+        //1)
+        //배경을 설정
+        function setBg() {
+            content.style.background = "url(../images/gamebg00.jpg)";
+            //content.style.backgroundRepeat="no-repeat";
+            content.style.backgroundSize = "900px 570px"; //css문법을 js로 표현:-뺴고 대문자(낙타기법)
+        }
+
+        //2)
+        //배경 이미지를 음수방향(좌)으로 이동
+        function bgEffect() {
+            bgX--;
+            content.style.backgroundPosition = bgX + "px 0px";
+        }
+
+        //3)
+        //상단에 정보 출력 패널을 처리 (점수, 에너지, 스테이지 단계 등)
+        function setInfo() {
+            header.innerText = score;
+
+        }
+
+        //4)
+        //비행기 등~장~
+        function createPlane() {
+            plane = new Plane(content, "../images/plane_duckw.png", 100, 70, 0, 0, 0, 0);
+        }
+        //5)
+        //좌우로 이동
+        function moveX(n) {
+            plane.velX = n;
+        }
+        //5)
+        //상하로 이동
+        function moveY(n) {
+            plane.velY = n;
+        }
+
+        //5-2)
+        function control() {
+            flag=!flag;
+        }
+
+        //6)
+        //총알 생성
+        function fire(){
+            bullet=new Bullet(content, "../images/shooting/ball.png", 10, 10, plane.x+plane.width, plane.y+15, 10, 0);
+
+            //생성된 총알 배열에 추가
+            bulletArray.push(bullet);
+        }
+
+        //8)
+        //적군 생성
+        function createEnemy(){
+            //5마리의 적군 만들기
+            for(let i=0; i<enemyImg.length; i++){
+                let enemy=new Enemy(content, "../images/shooting/"+enemyImg[i], 70, 65, 950, i*100, -0.5, 0);
+           
+                //적군을 배열에 담기(담아놓아야 tick render 메서드 호출 가능)
+                enemyArray.push(enemy);
+            }
+        }
+
+        //9)
+        //점수를 +10증가시키는 함수
+        function setScore(){
+            score+=10;
+            header.innerText=score;
+        }
+
+        //0)
+        function init() {
+            header = document.getElementById("header");
+            content = document.getElementById("content");
+
+            setBg();
+            setInfo();
+            createPlane();
+            createEnemy();
+        }
+
+        //0)
+        function loop() {
+            if (flag) {
+                //console.log("뿅뿅");
+                bgEffect();
+
+                //비행기가 보유한 메서드 tick(), render()를 호출
+                plane.tick();
+                plane.render();
+
+                //태어난 모든 총알을 대상으로 보유한 메서드 tick(), render()를 호출
+                for(let i=0; i<bulletArray.length; i++){
+                    bulletArray[i].tick();
+
+                    //tick()에서 충돌체크 시 총알과 적군의 배열에서 제거해버리면 
+                    //아래의 bulletArray[i]번째에서 존재하지 않는 요소에 대해 코드가 접근하려고 하므오, 에러가 발생
+                    //따라서 tick()에서 처리하는 것이 아닌 배열을 사용하는 가장 마지막 문장인 아래의 코드에서 충돌체크를 처리
+                    //결론: 배열 제거 후 접근하려는 에러
+                    bulletArray[i].render();
+                }
+
+                //모든 적군을 대상으로 tick(), render()를 호출
+                for(let i=0; i<enemyArray.length; i++){
+                    enemyArray[i].tick();
+                    enemyArray[i].render();
+                }
+            }
+        }
+
+        //0)
+        addEventListener("load", function () {
+            init();
+
+            setInterval("loop()", 10);
+
+            //키보드 누르면
+            document.body.addEventListener("keydown", function (e) {
+                switch (e.keyCode) {
+                    case 37: moveX(-5); break; //좌
+                    case 39: moveX(5); break; //우
+                    case 38: moveY(-5); break; //상
+                    case 40: moveY(5); break; //하
+
+                    case 32: fire(); break; //총알
+                    case 27: control(); break; //게임가동스위치pause
+
+                }
+
+            });
+            //키보드 손떼면
+            document.body.addEventListener("keyup", function (e) {
+                switch (e.keyCode) {
+                    case 37: moveX(0); break; //좌
+                    case 39: moveX(0); break; //우
+                    case 38: moveY(0); break; //상
+                    case 40: moveY(0); break; //하
+
+                }
+
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="header"></div>
+        <div id="content"></div>
+    </div>
+</body>
+
+</html>
